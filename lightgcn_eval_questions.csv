@@ -1,0 +1,11 @@
+question,expected_answer,gold_evidence,answer_present
+How does LightGCN combine embeddings from different layers?,It uses a weighted sum of embeddings from all layers.,"weighted sum of the embeddings learned at all layers",yes
+Why is using only the last layer problematic in LightGCN?,Because embeddings can become over-smoothed as the number of layers increases.,"embeddings will be over-smoothed",yes
+What is the main difference between LightGCN and traditional GCN-based recommendation models?,LightGCN removes feature transformation and nonlinear activation and keeps neighborhood aggregation.,"abandon the use of feature transformation and nonlinear activation",yes
+What type of graph does LightGCN use?,The user-item interaction graph.,"user-item interaction graph",yes
+How are user and item embeddings updated in LightGCN?,By aggregating normalized embeddings from neighboring users or items.,"normalized sum of neighbor embeddings",yes
+What loss function is used to train LightGCN?,Bayesian Personalized Ranking loss.,"Bayesian Personalized Ranking (BPR) loss",yes
+Why does LightGCN use embeddings from multiple layers?,To reduce over-smoothing and combine information from multiple propagation depths.,"embeddings will be over-smoothed;embeddings at different layers capture different semantics",yes
+Does LightGCN use nonlinear activation functions during propagation?,No.,"abandon the use of feature transformation and nonlinear activation",yes
+Does LightGCN use feature transformation matrices during propagation?,No.,"abandon the use of feature transformation and nonlinear activation;do not have feature transformation weight matrices",yes
+What GPU model was used to train LightGCN?,,,no

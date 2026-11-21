@@ -1,0 +1,5 @@
+DNS stands for Domain Name System. It helps translate domain names into IP addresses.
+
+A DNS resolver looks up DNS information on behalf of a client. It may answer from its cache or query other DNS servers.
+
+If a device can reach an IP address but cannot resolve a domain name, a DNS problem is one possible cause.
