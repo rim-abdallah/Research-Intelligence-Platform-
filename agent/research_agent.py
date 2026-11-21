@@ -22,6 +22,8 @@ class ResearchState(TypedDict, total=False):
     snippets: list[dict]
     pdf_paths : list[str]
     overview_only: bool
+    paper_index: tuple[list[dict], np.ndarray]
+
 
 def rank_evidence_snippets(question, evidence, reranker):
     candidates = []
@@ -48,8 +50,11 @@ def rank_evidence_snippets(question, evidence, reranker):
 def research_agent(state: ResearchState) -> dict:
     model = load_embedding_model()
     pdf_paths = state.get("pdf_paths", [])
+    paper_index = state.get("paper_index")
 
-    if pdf_paths:
+    if paper_index is not None:
+        chunks, vectors = paper_index
+    elif pdf_paths:
         chunks = []
         vector_batches = []
 
@@ -59,18 +64,18 @@ def research_agent(state: ResearchState) -> dict:
             vector_batches.append(paper_vectors)
 
         vectors = np.concatenate(vector_batches, axis=0)
-        if state.get("overview_only"):
-            keep = [i for i, chunk in enumerate(chunks) if chunk["page"] <= 2]
-            if not keep:
-                return {"evidence": [], "snippets": []}
-
-            chunks = [chunks[i] for i in keep]
-            vectors = vectors[keep]
-
         print(f"Indexed {len(pdf_paths)} PDF(s): {len(chunks)} chunks.")
     else:
         chunks = json.loads((PROJECT / "chunks.json").read_text(encoding="utf-8"))
         vectors = np.load(PROJECT / "chunk_embeddings.npy", allow_pickle=False)
+
+    if state.get("overview_only"):
+        keep = [i for i, chunk in enumerate(chunks) if chunk["page"] <= 2]
+        if not keep:
+            return {"evidence": [], "snippets": []}
+
+        chunks = [chunks[i] for i in keep]
+        vectors = vectors[keep]
 
     question = state["question"]
     candidates = retrieve_top_chunks(model, question, chunks, vectors, top_k=20)
@@ -78,8 +83,6 @@ def research_agent(state: ResearchState) -> dict:
     evidence = rerank_chunks(reranker, question, candidates)[:6]
     snippets = rank_evidence_snippets(question, evidence, reranker)
     return {"evidence": evidence, "snippets": snippets}
-
-
 
 if __name__ == "__main__":
     graph = StateGraph(ResearchState)

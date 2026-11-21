@@ -2,6 +2,8 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from workflow import workflow
+from pdf_index import build_pdf_index
+from rag_utils import load_embedding_model
 
 
 QUESTIONS = {
@@ -17,22 +19,27 @@ QUESTIONS = {
 
 
 def compare_papers(pdf_paths: list[str], overview_only: bool = False) -> list[dict]:
+    model = load_embedding_model()
     rows = []
 
     for path in pdf_paths:
+        pdf = Path(path)
+        paper_index = build_pdf_index(pdf, model)
+        print(f"Indexed {pdf.name}: {len(paper_index[0])} chunks.")
+
         fields = {}
         for label, question in QUESTIONS.items():
             fields[label] = workflow.invoke({
                 "question": question,
-                "pdf_paths": [path],
+                "paper_index": paper_index,
                 "comparison_field": label,
                 "overview_only": overview_only,
             })
 
-
-        rows.append({"paper": Path(path).name, "fields": fields})
+        rows.append({"paper": pdf.name, "fields": fields})
 
     return rows
+
 
 
 if __name__ == "__main__":

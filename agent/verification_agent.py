@@ -12,13 +12,19 @@ def verification_agent(state: dict) -> dict:
 
     for draft in state["claims"]:
         claim = draft["claim"]
+        quote = draft.get("quote", "")
+        normalized_quote = " ".join(quote.split())
+
         cited = [
-            {"id": i, "text": evidence[i]["text"]}
+            {"id": i, "text": quote}
             for i in draft["evidence_ids"]
             if i in evidence
+            and normalized_quote
+            and normalized_quote in " ".join(evidence[i]["text"].split())
         ]
+
         verdict = "insufficient"
-        reason = "No cited passage was available."
+        reason = "The selected quote is missing from the cited passage."
 
         if cited:
             response = chat(

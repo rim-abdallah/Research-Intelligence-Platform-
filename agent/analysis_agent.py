@@ -77,10 +77,23 @@ def analysis_agent(state: dict) -> dict:
         options={"temperature": 0},
     )
 
-    data = json.loads(response.message.content)
+    try:
+        data = json.loads(response.message.content or "")
+    except (json.JSONDecodeError, TypeError):
+        stop_reason = getattr(response, "done_reason", None) or "unknown"
+        print(f"[Analysis] Invalid JSON from Ollama (stop reason: {stop_reason}).")
+        return {"claims": [], "revision_attempted": revising}
+
+    drafts = data.get("claims") if isinstance(data, dict) else None
+    if not isinstance(drafts, list):
+        print("[Analysis] Invalid response: expected a claims list.")
+        return {"claims": [], "revision_attempted": revising}
+
     claims = []
 
-    for draft in data.get("claims", []):
+    for draft in drafts:
+        if not isinstance(draft, dict):
+            continue
         snippet_id = draft.get("snippet_id")
         claim = draft.get("claim")
 
