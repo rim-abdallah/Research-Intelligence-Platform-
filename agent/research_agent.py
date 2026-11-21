@@ -1,9 +1,10 @@
 import json
 from pathlib import Path
 from typing import TypedDict
-
+import re
 import numpy as np
 from langgraph.graph import END, START, StateGraph
+from pdf_index import build_pdf_index
 
 from rag_utils import (
     load_embedding_model,
@@ -18,18 +19,66 @@ PROJECT = Path(__file__).resolve().parents[1]
 class ResearchState(TypedDict, total=False):
     question: str
     evidence: list[dict]
+    snippets: list[dict]
+    pdf_paths : list[str]
+    overview_only: bool
+
+def rank_evidence_snippets(question, evidence, reranker):
+    candidates = []
+    seen = set()
+
+    for passage_id, passage in enumerate(evidence, start=1):
+        for part in re.split(r"(?<=[.!?])\s+", passage["text"]):
+            text = part.strip()
+            key = " ".join(text.split())
+
+            if not key or key in seen:
+                continue
+
+            seen.add(key)
+            candidates.append({"text": text, "passage_id": passage_id})
+
+    if not candidates:
+        return []
+
+    return rerank_chunks(reranker, question, candidates)[:8]
+
 
 
 def research_agent(state: ResearchState) -> dict:
-    chunks = json.loads((PROJECT / "chunks.json").read_text(encoding="utf-8"))
-    vectors = np.load(PROJECT / "chunk_embeddings.npy", allow_pickle=False)
+    model = load_embedding_model()
+    pdf_paths = state.get("pdf_paths", [])
+
+    if pdf_paths:
+        chunks = []
+        vector_batches = []
+
+        for pdf_path in pdf_paths:
+            paper_chunks, paper_vectors = build_pdf_index(Path(pdf_path), model)
+            chunks.extend(paper_chunks)
+            vector_batches.append(paper_vectors)
+
+        vectors = np.concatenate(vector_batches, axis=0)
+        if state.get("overview_only"):
+            keep = [i for i, chunk in enumerate(chunks) if chunk["page"] <= 2]
+            if not keep:
+                return {"evidence": [], "snippets": []}
+
+            chunks = [chunks[i] for i in keep]
+            vectors = vectors[keep]
+
+        print(f"Indexed {len(pdf_paths)} PDF(s): {len(chunks)} chunks.")
+    else:
+        chunks = json.loads((PROJECT / "chunks.json").read_text(encoding="utf-8"))
+        vectors = np.load(PROJECT / "chunk_embeddings.npy", allow_pickle=False)
 
     question = state["question"]
-    candidates = retrieve_top_chunks(
-        load_embedding_model(), question, chunks, vectors, top_k=20
-    )
-    ranked = rerank_chunks(load_reranker(), question, candidates)
-    return {"evidence": ranked[:6]}
+    candidates = retrieve_top_chunks(model, question, chunks, vectors, top_k=20)
+    reranker = load_reranker()
+    evidence = rerank_chunks(reranker, question, candidates)[:6]
+    snippets = rank_evidence_snippets(question, evidence, reranker)
+    return {"evidence": evidence, "snippets": snippets}
+
 
 
 if __name__ == "__main__":
