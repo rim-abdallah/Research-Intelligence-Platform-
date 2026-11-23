@@ -37,3 +37,21 @@ If no claim passes and retrieved evidence is available, the workflow allows one 
 The verifier is model-based and can make mistakes. A highlight shows where the quote appears, not that the claim is correct. Scanned PDFs without selectable text need OCR. Comparison is experimental and can miss or omit fields. The browser shows a highlighted page preview, not a full PDF viewer.
 
 Keep private papers, credentials, and generated evidence previews out of Git.
+
+## Compare dense and BM25 retrieval
+
+The evaluator supports an optional BM25 keyword-search baseline. Both modes
+use the same chunks, labeled questions, candidate limit (up to 20), and
+cross-encoder reranker. Dense remains the default; the app is unchanged.
+
+```powershell
+python evaluate_rag.py --retrieval dense --questions lightgcn_eval_questions_reviewed.csv
+python evaluate_rag.py --retrieval bm25 --questions lightgcn_eval_questions_reviewed.csv
+```
+
+To evaluate another paper, add `--pdf paper.pdf` and give the matching CSV with
+`--questions`. The BM25 route chunks the PDF without loading the embedding
+model, but still uses the shared reranker. Hit@K and MRR measure the ranking
+of labeled evidence. The evaluator excludes unanswerable questions and rows
+without a matching evidence phrase, so these are not answer-accuracy or
+abstention scores.

@@ -15,7 +15,7 @@ REFERENCES_HEADING = re.compile(
 )
 
 
-def build_pdf_index(pdf_path: Path, model):
+def extract_pdf_chunks(pdf_path: Path):
     chunks = []
 
     with pymupdf.open(pdf_path, filetype="pdf") as pdf:
@@ -53,6 +53,11 @@ def build_pdf_index(pdf_path: Path, model):
     if not chunks:
         raise ValueError("No selectable text found. Scanned PDFs need OCR.")
 
+    return chunks
+
+
+def build_pdf_index(pdf_path: Path, model):
+    chunks = extract_pdf_chunks(pdf_path)
     texts = [chunk["text"] for chunk in chunks]
     return chunks, create_embeddings(model, texts)
 
