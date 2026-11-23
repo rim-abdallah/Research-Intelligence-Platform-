@@ -80,7 +80,7 @@ def research_agent(state: ResearchState) -> dict:
     question = state["question"]
     candidates = retrieve_top_chunks(model, question, chunks, vectors, top_k=20)
     reranker = load_reranker()
-    evidence = rerank_chunks(reranker, question, candidates)[:6]
+    evidence = rerank_chunks(reranker, question, candidates)[:15]
     snippets = rank_evidence_snippets(question, evidence, reranker)
     return {"evidence": evidence, "snippets": snippets}
 
