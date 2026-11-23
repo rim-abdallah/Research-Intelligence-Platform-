@@ -1,0 +1,4 @@
+question,expected_answer,gold_evidence,answer_present
+Which two techniques are combined to improve content delivery?,Wireless edge caching and coded multicasting.,wireless edge caching and coded multicasting,yes
+Where was the experimental prototype implemented?,CorteXlab.,"prototype implementation in CorteXlab;testbed facility, CorteXlab",yes
+What baseline schemes did the authors compare against?,State-of-the-art uncoded schemes.,state-of-the-art uncoded schemes,yes
