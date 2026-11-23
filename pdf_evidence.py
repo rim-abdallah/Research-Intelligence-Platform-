@@ -13,7 +13,10 @@ def render_evidence_page(
 
         page = pdf[pdf_page - 1]
         quote = " ".join(quote.split())
-        matches = match_extracted_words(page, quote)
+        matches = page.search_for(quote, quads=True) if quote else []
+        if quote and not matches:
+            matches = match_extracted_words(page, quote)
+
 
         if matches:
             page.add_highlight_annot(matches)
