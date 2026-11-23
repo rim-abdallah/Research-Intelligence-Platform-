@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 import streamlit as st
 from pdf_evidence import render_evidence_page
 
+from agent.verification_agent import is_displayable
 from workflow import workflow
 
 
@@ -77,7 +78,7 @@ if "last_run" in st.session_state:
     citations = {}
 
     for draft, check in zip(result["claims"], result["checks"]):
-        if check["verdict"] != "supported" or not draft.get("quote"):
+        if not is_displayable(check) or not draft.get("quote"):
             continue
 
         quote = draft["quote"]

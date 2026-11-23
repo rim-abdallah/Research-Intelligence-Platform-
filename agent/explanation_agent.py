@@ -1,11 +1,14 @@
+from agent.verification_agent import is_displayable
+
+
 def explanation_agent(state: dict) -> dict:
     supported = [
         check for check in state["checks"]
-        if check["verdict"] == "supported" and check["evidence_ids"]
+        if is_displayable(check)
     ]
 
     if not supported:
-        return {"answer": "No draft claim passed verification."}
+        return {"answer": "I couldn't find a supported answer in the retrieved passages."}
 
     unique_claims = {}
 
@@ -33,6 +36,6 @@ def explanation_agent(state: dict) -> dict:
             lines.append(f"  Evidence reviewed {labels}: {source}, PDF page {page}")
 
     if len(supported) < len(state["checks"]):
-        lines.append("Some draft claims did not pass verification and were omitted.")
+        lines.append("Some draft claims were omitted because they were unsupported or did not answer the question.")
 
     return {"answer": "\n".join(lines)}

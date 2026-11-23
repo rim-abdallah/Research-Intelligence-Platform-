@@ -3,7 +3,7 @@ from langgraph.graph import END, START, StateGraph
 from agent.analysis_agent import analysis_agent
 from agent.explanation_agent import explanation_agent
 from agent.research_agent import ResearchState, research_agent
-from agent.verification_agent import verification_agent
+from agent.verification_agent import is_displayable, verification_agent
 from argparse import ArgumentParser
 
 class WorkflowState(ResearchState, total=False):
@@ -20,8 +20,8 @@ def after_verification(state: WorkflowState) -> str:
     if state.get("revision_attempted") or not state["evidence"]:
         return "explanation"
 
-    # If at least one claim passed, show the supported claims.
-    if any(check["verdict"] == "supported" for check in state["checks"]):
+    # A claim must be supported and relevant before it can stop the retry.
+    if any(is_displayable(check) for check in state["checks"]):
         return "explanation"
 
     # No claim passed, but evidence is available. Try one revision.
@@ -80,6 +80,7 @@ if __name__ == "__main__":
     for check in result["checks"]:
         print(f"\nDraft claim: {check['claim']}")
         print(f"Verdict: {check['verdict']}")
+        print(f"Answers question: {check['answers_question']}")
         print(f"Reason: {check['reason']}")
         print(f"Evidence IDs: {check['evidence_ids']}")
 
